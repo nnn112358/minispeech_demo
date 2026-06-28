@@ -112,14 +112,15 @@ teacher-forced 評価ができず PyTorch で計測。L1 回帰学習なので d
 パラメータ数(ONNX 実測)・fp16 サイズ・CPU 時間は <a href="https://github.com/nnn112358/minispeech_onnx" target="_blank" rel="noopener">リポジトリ README</a> より
 (fp16・1 スレッド・mel T≈131)。<b>mel-L1</b> は copy-synthesis(wav→mel→ボコーダ→wav→mel の L1、
 JSUT val 50 発話をデプロイ fp16 ONNX で実測。小さいほど高品質)。
+判別器(MPD)を generator サイズから切り離し <code>max_ch=128</code> 固定で学習し直したもの(過強判別器の高域アーティファクトを抑え、特に dim が大きいほど改善: d512 0.166→0.151, d256 0.241→0.236)。
 </p>
 <table class="info">
 <thead><tr><th>モデル</th><th>種別</th><th>構成</th><th>ONNX params</th><th>fp16 サイズ</th><th>CPU 時間</th><th>mel-L1 ↓</th></tr></thead>
 <tbody>
 <tr><th>vocos_d64</th><td>Vocos</td><td>dim=64, n_fft=512 (tiny)</td><td>0.41M</td><td>0.8 MB</td><td>3.7 ms</td><td>0.350</td></tr>
-<tr><th>vocos_d128</th><td>Vocos</td><td>dim=128, n_fft=512 (Lite-C)</td><td>0.80M</td><td>1.6 MB</td><td>7.6 ms</td><td>0.279</td></tr>
-<tr><th>vocos_d256</th><td>Vocos</td><td>dim=256, n_fft=512 (Lite-A)</td><td>2.13M</td><td>4.3 MB</td><td>15.9 ms</td><td>0.241</td></tr>
-<tr><th>vocos_d512</th><td>Vocos</td><td>dim=512, n_fft=1024 (Full)</td><td>14.51M</td><td>29.1 MB</td><td>103.0 ms</td><td><b>0.166</b></td></tr>
+<tr><th>vocos_d128</th><td>Vocos</td><td>dim=128, n_fft=512 (Lite-C)</td><td>0.80M</td><td>1.6 MB</td><td>7.6 ms</td><td>0.275</td></tr>
+<tr><th>vocos_d256</th><td>Vocos</td><td>dim=256, n_fft=512 (Lite-A)</td><td>2.13M</td><td>4.3 MB</td><td>15.9 ms</td><td>0.236</td></tr>
+<tr><th>vocos_d512</th><td>Vocos</td><td>dim=512, n_fft=1024 (Full)</td><td>14.51M</td><td>29.1 MB</td><td>103.0 ms</td><td><b>0.151</b></td></tr>
 </tbody>
 </table>
 <figure class="plot">

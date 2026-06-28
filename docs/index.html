@@ -50,7 +50,7 @@ figure.plot figcaption { color: #888; font-size: 0.85rem; margin-top: 4px; }
 <p class="repo">📦 リポジトリ: <a href="https://github.com/nnn112358/minispeech_demo" target="_blank" rel="noopener">github.com/nnn112358/minispeech_demo</a></p>
 <p class="desc">
 MiniSpeechで「おはようございます、こんにちは、こんばんは、おやすみなさい。」を、全 6 encoder × 4 vocoder
-= 24 通りで合成した mel→audio の STFT スペクトログラム(CPU, fp16, magma, dB, 0–11kHz)。
+= 24 通りで合成した mel→audio の STFT スペクトログラム。
 セルをクリックすると拡大表示。<b>▶ 音声</b>付き(24 件)は動画(再生ヘッド付き)で再生、
 それ以外は原寸 PNG を表示します。見出しの数値は各モデルの ONNX パラメータ数(下表参照)。
 </p>
@@ -125,6 +125,23 @@ JSUT val 50 発話をデプロイ fp16 ONNX で実測。小さいほど高品質
 <figure class="plot">
 <a href="plot_vocoder.png" target="_blank"><img src="plot_vocoder.png" alt="Vocoder params vs mel-L1 散布図"></a>
 <figcaption>params(ONNX, リニア軸)と mel-L1 の関係。params が大きいほど mel-L1 が下がる(クリックで拡大)。</figcaption>
+</figure>
+
+<h3>Encoder + Vocoder — end-to-end(24 通り)</h3>
+<p>
+全 6 encoder × 4 vocoder = 24 通りの組み合わせを、合計パラメータ数(encoder + vocoder, ONNX)と
+<b>end-to-end mel-L1</b> で比較。end-to-end mel-L1 は phoneme_ids →(teacher-forced duration)→ encoder →
+mel → vocoder → audio → mel を正解 mel と比較した L1(JSUT 50 発話で実測。小さいほど高品質)。
+</p>
+<p class="src">
+end-to-end mel-L1 は <b>ほぼ encoder で決まる</b>:同じ encoder なら 4 vocoder の値はほぼ一致し、
+vocoder を大きくしても合計パラメータ数が増えるだけで end-to-end はほとんど改善しない
+(下図で vocos_d512 系列が右に大きくずれるのに縦位置はほぼ同じ)。品質を上げる主因は encoder の dim。
+</p>
+<figure class="plot">
+<a href="plot_e2e.png" target="_blank"><img src="plot_e2e.png" alt="encoder+vocoder 合計params vs end-to-end mel-L1 散布図"></a>
+<figcaption>各点 = encoder × vocoder の組み合わせ(点ラベル = encoder の dim、色 = vocoder)。
+横軸 = 合計 params(リニア軸)、縦軸 = end-to-end mel-L1(上ほど高品質。クリックで拡大)。</figcaption>
 </figure>
 </section>
 

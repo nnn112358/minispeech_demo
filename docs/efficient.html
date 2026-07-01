@@ -58,11 +58,7 @@ OpenJTalk g2p → <b>EfficientEncoder</b>(text→80-mel)→ Vocos(mel→音声)�
 </p>
 
 <h2>1. ラインナップ結果</h2>
-<p class="desc">
-幅ラダー: <code>reduction</code> を 16/8/4/2 と変えるだけで内部幅 <code>dim2</code> = 32/64/128/256。
-mel-L1 は GT duration を与えた teacher-forced 再構成 L1(全5000平均、低いほど高品質)。
-net RSS は fp16 ONNX を CPU 1スレッド推論した実メモリ増分(下記「計測方法」)。
-</p>
+
 <div class="wrap">
 <table>
 <thead>
@@ -135,13 +131,9 @@ supertiny は tiny のちょうど半分の params(0.072M = 0.50×)。
 </div>
 <p class="src">スペクトログラムは STFT(n_fft=1024, hop=256)。列を右へ = ボコーダ大、行を下へ = 音響モデル大。</p>
 
-<h2>4. メモリ vs 品質</h2>
-<figure class="plot">
-  <img src="./eff_memory_quality.png" alt="memory vs quality">
-  <figcaption>4段ラダーの net RSS(横)と mel-L1(縦、上ほど高品質)。緑丸 = mel-L1 ≤ 0.55 を満たす最小メモリ解(small)。</figcaption>
-</figure>
 
-<h2>5. conv(MiniSpeechEncoder)との比較</h2>
+
+<h2>4. conv(MiniSpeechEncoder)との比較</h2>
 <p class="desc">
 既存の conv-only <b>MiniSpeechEncoder</b>(青)と Efficient lineup(赤)を、同一データ・同一 eval で重ね合わせ。
 </p>
@@ -150,10 +142,7 @@ supertiny は tiny のちょうど半分の params(0.072M = 0.50×)。
   <figcaption>左: params vs mel-L1、右: net RSS vs mel-L1(いずれも線形軸)。Efficient は<b>パラメータ効率で全域優位</b>、
   net RSS では<b>中〜高品質域で大幅優位・極小域は conv が僅かに有利</b>(small/d128 付近で交差)。</figcaption>
 </figure>
-<figure class="plot">
-  <img src="./eff_param_vs_mel.png" alt="params vs mel-L1 (log)">
-  <figcaption>params vs mel-L1(対数軸)。middle(1.26M/0.398)は conv d192(1.75M/0.442)を上回り d256(3.08M/0.392)に肉薄。</figcaption>
-</figure>
+
 
 <h2>計測方法</h2>
 <ul>

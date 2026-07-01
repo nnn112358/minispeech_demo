@@ -37,6 +37,10 @@ table.matrix .cell img { width: 240px; height: auto; display: block; border-radi
 table.matrix .cell:hover img { outline: 3px solid #00bcd4; }
 table.matrix audio { width: 240px; height: 32px; margin-top: 4px; }
 th .pc { display: block; font-weight: 400; font-size: 0.78em; opacity: 0.82; margin-top: 1px; }
+table.szmat td { white-space: nowrap; font-variant-numeric: tabular-nums; }
+table.szmat tbody th { text-align: left; }
+table.szmat td .r { font-weight: 700; }
+td.min { background: rgba(46,158,79,.20); }
 .src { color: #888; font-size: 0.85rem; }
 code { background: rgba(128,128,128,.15); padding: 1px 5px; border-radius: 4px; }
 ul { max-width: 72rem; }
@@ -131,6 +135,67 @@ supertiny は tiny のちょうど半分の params(0.072M = 0.50×)。
   net RSS では<b>中〜高品質域で大幅優位・極小域は conv が僅かに有利</b>(small/d128 付近で交差)。</figcaption>
 </figure>
 
+
+<h2>4. end-to-end システムサイズ (params / net RSS)</h2>
+<p class="desc">
+各セル = <b>合計 params(M) / 合計 net RSS(MB)</b> = encoder + vocoder。net RSS は fp16 ONNX を
+CPU 1スレッド推論したモデル増分(floor 53MB 差引)。実プロセス総メモリ ≈ 表値 + floor 53MB(共有1回)。
+<b>ボコーダ(特に vocos_d512 = net 110MB)が系メモリを支配</b> — 軽量化の本丸はボコーダ側。
+</p>
+
+<h3>単体の実測値</h3>
+<div class="wrap" style="display:flex; gap:24px; flex-wrap:wrap">
+<table>
+<thead><tr><th>encoder</th><th>params</th><th>net RSS</th></tr></thead>
+<tbody>
+<tr><th>supertiny</th><td>0.072M</td><td>4.09 MB</td></tr>
+<tr><th>tiny</th><td>0.144M</td><td>5.26 MB</td></tr>
+<tr><th>small</th><td>0.373M</td><td>7.09 MB</td></tr>
+<tr><th>middle</th><td>1.258M</td><td>12.71 MB</td></tr>
+<tr><td colspan="3" style="text-align:center; color:#888">— conv (MiniSpeechEncoder) —</td></tr>
+<tr><th>enc_d64</th><td>0.162M</td><td>3.98 MB</td></tr>
+<tr><th>enc_d96</th><td>0.449M</td><td>6.48 MB</td></tr>
+<tr><th>enc_d128</th><td>0.787M</td><td>8.54 MB</td></tr>
+<tr><th>enc_d192</th><td>1.746M</td><td>16.83 MB</td></tr>
+<tr><th>enc_d256</th><td>3.081M</td><td>28.13 MB</td></tr>
+<tr><th>enc_d384</th><td>6.883M</td><td>60.16 MB</td></tr>
+</tbody></table>
+<table>
+<thead><tr><th>vocoder</th><th>params</th><th>net RSS</th></tr></thead>
+<tbody>
+<tr><th>vocos_d64</th><td>0.45M</td><td>5.44 MB</td></tr>
+<tr><th>vocos_d128</th><td>0.58M</td><td>8.60 MB</td></tr>
+<tr><th>vocos_d256</th><td>1.91M</td><td>17.35 MB</td></tr>
+<tr><th>vocos_d512</th><td>13.50M</td><td>110.77 MB</td></tr>
+</tbody></table>
+</div>
+
+<h3>EfficientEncoder × Vocoder</h3>
+<div class="wrap">
+<table class="szmat">
+<thead><tr><th>enc \ voc</th><th>vocos_d64</th><th>vocos_d128</th><th>vocos_d256</th><th>vocos_d512</th></tr></thead>
+<tbody>
+<tr><th>supertiny</th><td class="min">0.52M / <span class="r">9.5</span></td><td>0.65M / <span class="r">12.7</span></td><td>1.98M / <span class="r">21.4</span></td><td>13.57M / <span class="r">114.9</span></td></tr>
+<tr><th>tiny</th><td>0.59M / <span class="r">10.7</span></td><td>0.72M / <span class="r">13.9</span></td><td>2.05M / <span class="r">22.6</span></td><td>13.64M / <span class="r">116.0</span></td></tr>
+<tr><th>small</th><td>0.82M / <span class="r">12.5</span></td><td>0.95M / <span class="r">15.7</span></td><td>2.28M / <span class="r">24.4</span></td><td>13.87M / <span class="r">117.9</span></td></tr>
+<tr><th>middle</th><td>1.71M / <span class="r">18.2</span></td><td>1.84M / <span class="r">21.3</span></td><td>3.17M / <span class="r">30.1</span></td><td>14.76M / <span class="r">123.5</span></td></tr>
+</tbody></table>
+</div>
+
+<h3>MiniSpeechEncoder (conv) × Vocoder</h3>
+<div class="wrap">
+<table class="szmat">
+<thead><tr><th>enc \ voc</th><th>vocos_d64</th><th>vocos_d128</th><th>vocos_d256</th><th>vocos_d512</th></tr></thead>
+<tbody>
+<tr><th>enc_d64</th><td class="min">0.61M / <span class="r">9.4</span></td><td>0.74M / <span class="r">12.6</span></td><td>2.07M / <span class="r">21.3</span></td><td>13.66M / <span class="r">114.8</span></td></tr>
+<tr><th>enc_d96</th><td>0.90M / <span class="r">11.9</span></td><td>1.03M / <span class="r">15.1</span></td><td>2.36M / <span class="r">23.8</span></td><td>13.95M / <span class="r">117.3</span></td></tr>
+<tr><th>enc_d128</th><td>1.24M / <span class="r">14.0</span></td><td>1.37M / <span class="r">17.1</span></td><td>2.70M / <span class="r">25.9</span></td><td>14.29M / <span class="r">119.3</span></td></tr>
+<tr><th>enc_d192</th><td>2.20M / <span class="r">22.3</span></td><td>2.33M / <span class="r">25.4</span></td><td>3.66M / <span class="r">34.2</span></td><td>15.25M / <span class="r">127.6</span></td></tr>
+<tr><th>enc_d256</th><td>3.53M / <span class="r">33.6</span></td><td>3.66M / <span class="r">36.7</span></td><td>4.99M / <span class="r">45.5</span></td><td>16.58M / <span class="r">138.9</span></td></tr>
+<tr><th>enc_d384</th><td>7.33M / <span class="r">65.6</span></td><td>7.46M / <span class="r">68.8</span></td><td>8.79M / <span class="r">77.5</span></td><td>20.38M / <span class="r">170.9</span></td></tr>
+</tbody></table>
+</div>
+<p class="src">緑 = 各系列の最小システム。conv は高dimで net RSS が急増(d384×d512=170.9MB)、efficient は中〜大域で系が軽い(middle×d512=123.5MB)。極小域(d64×d64)は両者ほぼ同等。</p>
 
 <h2>計測方法</h2>
 <ul>

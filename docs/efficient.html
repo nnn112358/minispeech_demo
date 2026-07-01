@@ -78,19 +78,7 @@ supertiny は tiny のちょうど半分の params(0.072M = 0.50×)。
 <span class="tag">min-mem 0.55解</span> small は mel-L1 ≤ 0.55 を満たす最小メモリ構成(7.09 MB, conv d128 の 8.86 MB を下回る)。
 </p>
 
-<h2>2. 音声デモ(same text / full Vocos)</h2>
-<p class="desc">
-テキスト:「おはようございます。今日はいい天気ですね。」 ボコーダは full Vocos(<code>vocos_jsut_ft10k</code>, dim512)で全段共通。
-音響モデルの差がそのまま音質差として現れる(大きいほど明瞭)。
-</p>
-<div class="audio-grid">
-  <div class="lbl">supertiny <span class="sub">0.072M</span></div><audio controls preload="none" src="./eff_audio/supertiny.wav"></audio>
-  <div class="lbl">tiny <span class="sub">0.144M</span></div><audio controls preload="none" src="./eff_audio/tiny.wav"></audio>
-  <div class="lbl">small <span class="sub">0.373M</span></div><audio controls preload="none" src="./eff_audio/small.wav"></audio>
-  <div class="lbl">middle <span class="sub">1.258M</span></div><audio controls preload="none" src="./eff_audio/middle.wav"></audio>
-</div>
-
-<h2>3. Encoder × Vocoder — end-to-end マトリクス</h2>
+<h2>2. Encoder × Vocoder — end-to-end マトリクス</h2>
 <p class="desc">
 4段の EfficientEncoder × 4種の Vocos ボコーダ(d64/d128/d256/d512)= <b>16通り</b>の text→音声(end-to-end)。
 各セル: STFT スペクトログラム(画像クリックで再生ヘッド付き mp4)+ 音声プレイヤー。テキストは全て共通。
@@ -133,7 +121,7 @@ supertiny は tiny のちょうど半分の params(0.072M = 0.50×)。
 
 
 
-<h2>4. conv(MiniSpeechEncoder)との比較</h2>
+<h2>3. conv(MiniSpeechEncoder)との比較</h2>
 <p class="desc">
 既存の conv-only <b>MiniSpeechEncoder</b>(青)と Efficient lineup(赤)を、同一データ・同一 eval で重ね合わせ。
 </p>

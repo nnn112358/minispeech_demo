@@ -31,6 +31,12 @@ figure.plot figcaption { color: #888; font-size: 0.85rem; margin-top: 4px; }
 .audio-grid .lbl { font-weight: 600; white-space: nowrap; }
 .audio-grid .sub { font-weight: 400; color: #888; font-size: 0.85em; }
 audio { width: 100%; max-width: 30rem; vertical-align: middle; }
+table.matrix th, table.matrix td { padding: 6px; vertical-align: top; }
+table.matrix .cell { display: inline-block; }
+table.matrix .cell img { width: 240px; height: auto; display: block; border-radius: 4px; }
+table.matrix .cell:hover img { outline: 3px solid #00bcd4; }
+table.matrix audio { width: 240px; height: 32px; margin-top: 4px; }
+th .pc { display: block; font-weight: 400; font-size: 0.78em; opacity: 0.82; margin-top: 1px; }
 .src { color: #888; font-size: 0.85rem; }
 code { background: rgba(128,128,128,.15); padding: 1px 5px; border-radius: 4px; }
 ul { max-width: 72rem; }
@@ -88,13 +94,54 @@ supertiny は tiny のちょうど半分の params(0.072M = 0.50×)。
   <div class="lbl">middle <span class="sub">1.258M</span></div><audio controls preload="none" src="./eff_audio/middle.wav"></audio>
 </div>
 
-<h2>3. メモリ vs 品質</h2>
+<h2>3. Encoder × Vocoder — end-to-end マトリクス</h2>
+<p class="desc">
+4段の EfficientEncoder × 4種の Vocos ボコーダ(d64/d128/d256/d512)= <b>16通り</b>の text→音声(end-to-end)。
+各セル: STFT スペクトログラム(画像クリックで再生ヘッド付き mp4)+ 音声プレイヤー。テキストは全て共通。
+<b>end-to-end fp16 サイズ = encoder(行) + vocoder(列)</b>。最小 supertiny×d64 ≈ <b>1.0 MB</b>、最大 middle×d512 ≈ 31.7 MB。
+</p>
+<div class="wrap">
+<table class="matrix">
+<thead>
+<tr><th>enc \ voc</th>
+<th>vocos_d64<span class="pc">0.8 MB</span></th>
+<th>vocos_d128<span class="pc">1.6 MB</span></th>
+<th>vocos_d256<span class="pc">4.3 MB</span></th>
+<th>vocos_d512<span class="pc">29.1 MB</span></th></tr>
+</thead>
+<tbody>
+<tr><th>supertiny<span class="pc">0.19 MB</span></th>
+<td><a class="cell" href="./e2e/supertiny__vocos_d64.mp4" title="▶ mp4"><img src="./e2e/supertiny__vocos_d64.png" alt="supertiny × vocos_d64"></a><audio controls preload="none" src="./e2e/supertiny__vocos_d64.wav"></audio></td>
+<td><a class="cell" href="./e2e/supertiny__vocos_d128.mp4" title="▶ mp4"><img src="./e2e/supertiny__vocos_d128.png" alt="supertiny × vocos_d128"></a><audio controls preload="none" src="./e2e/supertiny__vocos_d128.wav"></audio></td>
+<td><a class="cell" href="./e2e/supertiny__vocos_d256.mp4" title="▶ mp4"><img src="./e2e/supertiny__vocos_d256.png" alt="supertiny × vocos_d256"></a><audio controls preload="none" src="./e2e/supertiny__vocos_d256.wav"></audio></td>
+<td><a class="cell" href="./e2e/supertiny__vocos_d512.mp4" title="▶ mp4"><img src="./e2e/supertiny__vocos_d512.png" alt="supertiny × vocos_d512"></a><audio controls preload="none" src="./e2e/supertiny__vocos_d512.wav"></audio></td></tr>
+<tr><th>tiny<span class="pc">0.35 MB</span></th>
+<td><a class="cell" href="./e2e/tiny__vocos_d64.mp4" title="▶ mp4"><img src="./e2e/tiny__vocos_d64.png" alt="tiny × vocos_d64"></a><audio controls preload="none" src="./e2e/tiny__vocos_d64.wav"></audio></td>
+<td><a class="cell" href="./e2e/tiny__vocos_d128.mp4" title="▶ mp4"><img src="./e2e/tiny__vocos_d128.png" alt="tiny × vocos_d128"></a><audio controls preload="none" src="./e2e/tiny__vocos_d128.wav"></audio></td>
+<td><a class="cell" href="./e2e/tiny__vocos_d256.mp4" title="▶ mp4"><img src="./e2e/tiny__vocos_d256.png" alt="tiny × vocos_d256"></a><audio controls preload="none" src="./e2e/tiny__vocos_d256.wav"></audio></td>
+<td><a class="cell" href="./e2e/tiny__vocos_d512.mp4" title="▶ mp4"><img src="./e2e/tiny__vocos_d512.png" alt="tiny × vocos_d512"></a><audio controls preload="none" src="./e2e/tiny__vocos_d512.wav"></audio></td></tr>
+<tr><th>small<span class="pc">0.81 MB</span></th>
+<td><a class="cell" href="./e2e/small__vocos_d64.mp4" title="▶ mp4"><img src="./e2e/small__vocos_d64.png" alt="small × vocos_d64"></a><audio controls preload="none" src="./e2e/small__vocos_d64.wav"></audio></td>
+<td><a class="cell" href="./e2e/small__vocos_d128.mp4" title="▶ mp4"><img src="./e2e/small__vocos_d128.png" alt="small × vocos_d128"></a><audio controls preload="none" src="./e2e/small__vocos_d128.wav"></audio></td>
+<td><a class="cell" href="./e2e/small__vocos_d256.mp4" title="▶ mp4"><img src="./e2e/small__vocos_d256.png" alt="small × vocos_d256"></a><audio controls preload="none" src="./e2e/small__vocos_d256.wav"></audio></td>
+<td><a class="cell" href="./e2e/small__vocos_d512.mp4" title="▶ mp4"><img src="./e2e/small__vocos_d512.png" alt="small × vocos_d512"></a><audio controls preload="none" src="./e2e/small__vocos_d512.wav"></audio></td></tr>
+<tr><th>middle<span class="pc">2.58 MB</span></th>
+<td><a class="cell" href="./e2e/middle__vocos_d64.mp4" title="▶ mp4"><img src="./e2e/middle__vocos_d64.png" alt="middle × vocos_d64"></a><audio controls preload="none" src="./e2e/middle__vocos_d64.wav"></audio></td>
+<td><a class="cell" href="./e2e/middle__vocos_d128.mp4" title="▶ mp4"><img src="./e2e/middle__vocos_d128.png" alt="middle × vocos_d128"></a><audio controls preload="none" src="./e2e/middle__vocos_d128.wav"></audio></td>
+<td><a class="cell" href="./e2e/middle__vocos_d256.mp4" title="▶ mp4"><img src="./e2e/middle__vocos_d256.png" alt="middle × vocos_d256"></a><audio controls preload="none" src="./e2e/middle__vocos_d256.wav"></audio></td>
+<td><a class="cell" href="./e2e/middle__vocos_d512.mp4" title="▶ mp4"><img src="./e2e/middle__vocos_d512.png" alt="middle × vocos_d512"></a><audio controls preload="none" src="./e2e/middle__vocos_d512.wav"></audio></td></tr>
+</tbody>
+</table>
+</div>
+<p class="src">スペクトログラムは STFT(n_fft=1024, hop=256)。列を右へ = ボコーダ大、行を下へ = 音響モデル大。</p>
+
+<h2>4. メモリ vs 品質</h2>
 <figure class="plot">
   <img src="./eff_memory_quality.png" alt="memory vs quality">
   <figcaption>4段ラダーの net RSS(横)と mel-L1(縦、上ほど高品質)。緑丸 = mel-L1 ≤ 0.55 を満たす最小メモリ解(small)。</figcaption>
 </figure>
 
-<h2>4. conv(MiniSpeechEncoder)との比較</h2>
+<h2>5. conv(MiniSpeechEncoder)との比較</h2>
 <p class="desc">
 既存の conv-only <b>MiniSpeechEncoder</b>(青)と Efficient lineup(赤)を、同一データ・同一 eval で重ね合わせ。
 </p>

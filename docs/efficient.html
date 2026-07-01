@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EfficientEncoder 評価 — 軽量日本語TTS音響モデル</title>
+<style>
+:root { color-scheme: light dark; }
+body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; line-height: 1.6; }
+h1 { margin: 0 0 8px; font-size: 1.4rem; }
+h2 { margin: 32px 0 8px; font-size: 1.2rem; }
+h3 { margin: 22px 0 6px; font-size: 1.05rem; }
+p.desc { margin: 0 0 16px; color: #666; max-width: 72rem; }
+p.repo { margin: 0 0 12px; font-size: 0.95rem; }
+a { color: #0a84ff; }
+section { max-width: 72rem; }
+.wrap { overflow-x: auto; }
+table { border-collapse: collapse; margin: 8px 0 12px; }
+th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: center; white-space: nowrap; }
+thead th { background: #1b1b1b; color: #fff; }
+tbody th { background: #1b1b1b; color: #fff; text-align: left; }
+td.best { font-weight: 700; }
+tr.pick td, tr.pick th { outline: 2px solid #2e9e4f; }
+.tag { font-size: 0.75rem; background: #2e9e4f; color: #fff; padding: 1px 6px; border-radius: 10px; margin-left: 6px; }
+figure.plot { margin: 12px 0 20px; }
+figure.plot img { max-width: 760px; width: 100%; height: auto; display: block;
+                  border: 1px solid #ccc; border-radius: 6px; background: #fff; }
+figure.plot figcaption { color: #888; font-size: 0.85rem; margin-top: 4px; }
+.audio-grid { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px;
+              align-items: center; max-width: 42rem; margin: 8px 0 12px; }
+.audio-grid .lbl { font-weight: 600; white-space: nowrap; }
+.audio-grid .sub { font-weight: 400; color: #888; font-size: 0.85em; }
+audio { width: 100%; max-width: 30rem; vertical-align: middle; }
+.src { color: #888; font-size: 0.85rem; }
+code { background: rgba(128,128,128,.15); padding: 1px 5px; border-radius: 4px; }
+ul { max-width: 72rem; }
+</style>
+</head>
+<body>
+
+<h1>EfficientEncoder 評価 — 軽量日本語TTS音響モデル</h1>
+<p class="desc">
+OpenJTalk g2p → <b>EfficientEncoder</b>(text→80-mel)→ Vocos(mel→音声)の2段構成。
+<a href="https://github.com/nnn112358/minispeech">EfficientSpeech</a>(Atienza 2023, Apache-2.0)を
+参照した軽量音響モデルを、<b>作業幅 dim2</b> だけを変えて4段(supertiny/tiny/small/middle)に
+スケールし、<b>品質(teacher-forced mel-L1)とメモリ(net RSS)</b>を評価した記録。
+全モデルは同一データ(JSUT 5000発話)・同一 mel 契約・同一トレーナーで学習。
+</p>
+<p class="repo">
+ソース: <a href="https://github.com/nnn112358/minispeech">github.com/nnn112358/minispeech</a>
+&nbsp;|&nbsp; <a href="./index.html">← スペクトログラム比較デモに戻る</a>
+</p>
+
+<h2>1. ラインナップ結果</h2>
+<p class="desc">
+幅ラダー: <code>reduction</code> を 16/8/4/2 と変えるだけで内部幅 <code>dim2</code> = 32/64/128/256。
+mel-L1 は GT duration を与えた teacher-forced 再構成 L1(全5000平均、低いほど高品質)。
+net RSS は fp16 ONNX を CPU 1スレッド推論した実メモリ増分(下記「計測方法」)。
+</p>
+<div class="wrap">
+<table>
+<thead>
+<tr><th>tier</th><th>dim2</th><th>層数</th><th>params</th>
+    <th>mel-L1 ↓</th><th>net RSS ↓</th><th>fp16 ONNX</th></tr>
+</thead>
+<tbody>
+<tr><th>supertiny</th><td>32</td><td>4</td><td>0.072M</td><td>0.743</td><td class="best">4.09 MB</td><td>0.188 MB</td></tr>
+<tr><th>tiny</th><td>64</td><td>12</td><td>0.144M</td><td>0.650</td><td>5.26 MB</td><td>0.349 MB</td></tr>
+<tr class="pick"><th>small</th><td>128</td><td>12</td><td>0.373M</td><td class="best">0.525</td><td>7.09 MB</td><td>0.807 MB</td></tr>
+<tr><th>middle</th><td>256</td><td>12</td><td>1.258M</td><td class="best">0.398</td><td>12.71 MB</td><td>2.577 MB</td></tr>
+</tbody>
+</table>
+</div>
+<p class="src">
+supertiny は tiny のちょうど半分の params(0.072M = 0.50×)。
+<span class="tag">min-mem 0.55解</span> small は mel-L1 ≤ 0.55 を満たす最小メモリ構成(7.09 MB, conv d128 の 8.86 MB を下回る)。
+</p>
+
+<h2>2. 音声デモ(same text / full Vocos)</h2>
+<p class="desc">
+テキスト:「おはようございます。今日はいい天気ですね。」 ボコーダは full Vocos(<code>vocos_jsut_ft10k</code>, dim512)で全段共通。
+音響モデルの差がそのまま音質差として現れる(大きいほど明瞭)。
+</p>
+<div class="audio-grid">
+  <div class="lbl">supertiny <span class="sub">0.072M</span></div><audio controls preload="none" src="./eff_audio/supertiny.wav"></audio>
+  <div class="lbl">tiny <span class="sub">0.144M</span></div><audio controls preload="none" src="./eff_audio/tiny.wav"></audio>
+  <div class="lbl">small <span class="sub">0.373M</span></div><audio controls preload="none" src="./eff_audio/small.wav"></audio>
+  <div class="lbl">middle <span class="sub">1.258M</span></div><audio controls preload="none" src="./eff_audio/middle.wav"></audio>
+</div>
+
+<h2>3. メモリ vs 品質</h2>
+<figure class="plot">
+  <img src="./eff_memory_quality.png" alt="memory vs quality">
+  <figcaption>4段ラダーの net RSS(横)と mel-L1(縦、上ほど高品質)。緑丸 = mel-L1 ≤ 0.55 を満たす最小メモリ解(small)。</figcaption>
+</figure>
+
+<h2>4. conv(MiniSpeechEncoder)との比較</h2>
+<p class="desc">
+既存の conv-only <b>MiniSpeechEncoder</b>(青)と Efficient lineup(赤)を、同一データ・同一 eval で重ね合わせ。
+</p>
+<figure class="plot">
+  <img src="./eff_overlay_linear.png" alt="params/RSS vs mel-L1 (linear)">
+  <figcaption>左: params vs mel-L1、右: net RSS vs mel-L1(いずれも線形軸)。Efficient は<b>パラメータ効率で全域優位</b>、
+  net RSS では<b>中〜高品質域で大幅優位・極小域は conv が僅かに有利</b>(small/d128 付近で交差)。</figcaption>
+</figure>
+<figure class="plot">
+  <img src="./eff_param_vs_mel.png" alt="params vs mel-L1 (log)">
+  <figcaption>params vs mel-L1(対数軸)。middle(1.26M/0.398)は conv d192(1.75M/0.442)を上回り d256(3.08M/0.392)に肉薄。</figcaption>
+</figure>
+
+<h2>計測方法</h2>
+<ul>
+<li><b>品質(mel-L1)</b>: GT duration を与えて mel を再構成し、マスク済み L1 を全80-mel・全5000発話で平均(frame-weighted)。学習損失と同一計算を eval モードで実施。</li>
+<li><b>メモリ(net RSS)</b>: fp16 ONNX を ONNX Runtime・CPU 1スレッドで推論したプロセスの peak RSS から、ランタイム下駄(import + 重み無しセッション)を差し引いた<b>モデル固有の実メモリ</b>(≒ fp16重み + 活性化アリーナ + 演算子カーネル)。固定入力(中央長発話, T≈300)。</li>
+<li><b>共有 mel 契約</b>: sr=22050, n_fft=1024, hop=256, win=1024, center=False, log-clamp 1e-5。EfficientEncoder 出力と Vocos 入力は bit-identical。</li>
+</ul>
+
+<p class="src" style="margin-top:24px">
+生成: EfficientEncoder + full Vocos / mini-jtts。
+参照: EfficientSpeech (Atienza 2023, Apache-2.0)。
+</p>
+
+</body>
+</html>

@@ -197,6 +197,55 @@ CPU 1スレッド推論したモデル増分(floor 53MB 差引)。実プロセ�
 </div>
 <p class="src">緑 = 各系列の最小システム。conv は高dimで net RSS が急増(d384×d512=170.9MB)、efficient は中〜大域で系が軽い(middle×d512=123.5MB)。極小域(d64×d64)は両者ほぼ同等。</p>
 
+<h2>5. 改善版ラインナップ: variance + PostNet (音声デモ)</h2>
+<p class="desc">
+EfficientSpeech 本家の <b>pitch/energy 予測器を復元 (variance adaptor)</b> し、さらに残差
+<b>PostNet</b> を追加した改善版。ピッチの不確定性 (mel-L1 の床) を条件付けで除去し、
+tiny 系で累積 <b>−17%</b>。韻律が明示制御されるため抑揚が安定し、推論時の制御ノブも獲得。
+</p>
+<div class="wrap">
+<table>
+<thead><tr><th>tier</th><th>params</th><th>mel-L1 (GT-p/e) ↓</th><th>net RSS ↓</th><th>L1素比</th></tr></thead>
+<tbody>
+<tr><th>tiny_vpn</th><td>0.263M</td><td>0.543</td><td>5.9 MB</td><td>−17%</td></tr>
+<tr><th>small_vpn</th><td>0.509M</td><td>0.464</td><td>7.8 MB</td><td>−12%</td></tr>
+<tr><th>mid_vpn</th><td>1.461M</td><td><b>0.363</b></td><td>13.6 MB</td><td>−8.5%</td></tr>
+</tbody>
+</table>
+</div>
+<p class="src">mid_vpn (1.46M) は conv d256 (3.08M / 0.392) を半分以下のサイズで上回る。
+mel-L1 は GT duration + GT pitch/energy を与えた teacher-forced 値。</p>
+
+<figure class="plot">
+  <img src="./eff_series.png" alt="params vs mel-L1 series">
+  <figcaption>params vs mel-L1 (系列別)。青=conv、赤=Efficient L1素、緑=variance+PostNet — 世代ごとにフロンティアが左上へ。</figcaption>
+</figure>
+
+<h3>音声: 改善版 vs 旧L1素 (同一テキスト・full Vocos)</h3>
+<div class="audio-grid">
+  <div class="lbl">tiny_vpn <span class="sub">0.263M・改善版</span></div><audio controls preload="none" src="./vpn_audio/tiny_vpn.wav"></audio>
+  <div class="lbl">tiny <span class="sub">0.144M・旧L1素</span></div><audio controls preload="none" src="./eff_audio/tiny.wav"></audio>
+  <div class="lbl">small_vpn <span class="sub">0.509M・改善版</span></div><audio controls preload="none" src="./vpn_audio/small_vpn.wav"></audio>
+  <div class="lbl">small <span class="sub">0.373M・旧L1素</span></div><audio controls preload="none" src="./eff_audio/small.wav"></audio>
+  <div class="lbl">mid_vpn <span class="sub">1.461M・改善版</span></div><audio controls preload="none" src="./vpn_audio/mid_vpn.wav"></audio>
+  <div class="lbl">middle <span class="sub">1.258M・旧L1素</span></div><audio controls preload="none" src="./eff_audio/middle.wav"></audio>
+</div>
+
+<h3>韻律制御デモ (tiny_var, 再学習なし・推論時ノブのみ)</h3>
+<p class="desc">
+variance adaptor の副産物: 予測 pitch/energy を推論時にスケール/シフトするだけで声を制御できる
+(<code>synth.py --pitch-shift / --pitch-scale / --energy-shift</code>)。すべて同一モデル・同一テキスト。
+</p>
+<div class="audio-grid">
+  <div class="lbl">normal</div><audio controls preload="none" src="./prosody_audio/normal.wav"></audio>
+  <div class="lbl">high <span class="sub">pitch +1σ (≈4半音上)</span></div><audio controls preload="none" src="./prosody_audio/high.wav"></audio>
+  <div class="lbl">low <span class="sub">pitch −1σ</span></div><audio controls preload="none" src="./prosody_audio/low.wav"></audio>
+  <div class="lbl">express <span class="sub">抑揚 ×1.7</span></div><audio controls preload="none" src="./prosody_audio/express.wav"></audio>
+  <div class="lbl">flat <span class="sub">抑揚 ×0.3 (棒読み)</span></div><audio controls preload="none" src="./prosody_audio/flat.wav"></audio>
+  <div class="lbl">strong <span class="sub">energy +1.2σ</span></div><audio controls preload="none" src="./prosody_audio/strong.wav"></audio>
+  <div class="lbl">soft <span class="sub">energy −1.2σ</span></div><audio controls preload="none" src="./prosody_audio/soft.wav"></audio>
+</div>
+
 <h2>計測方法</h2>
 <ul>
 <li><b>品質(mel-L1)</b>: GT duration を与えて mel を再構成し、マスク済み L1 を全80-mel・全5000発話で平均(frame-weighted)。学習損失と同一計算を eval モードで実施。</li>

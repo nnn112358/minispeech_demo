@@ -246,6 +246,22 @@ variance adaptor の副産物: 予測 pitch/energy を推論時にスケール/�
   <div class="lbl">soft <span class="sub">energy −1.2σ</span></div><audio controls preload="none" src="./prosody_audio/soft.wav"></audio>
 </div>
 
+<h3>GAN 仕上げ — 完成形 (variance+PostNet → mel-GAN)</h3>
+<p class="desc">
+v+PN モデルに mel-GAN 微調整を直列した<b>完成形レシピ</b>。韻律=variance、スペクトル細部=GAN の
+役割分担。mel-L1 は上がるが (仕様)、倍音構造と聴感は明確に改善する。
+</p>
+<figure class="plot">
+  <img src="./vpn_gan_2x2.png" alt="2x2 comparison">
+  <figcaption>2×2 対照実験 (tiny 系): ①素 / ②GANのみ / ③v+PNのみ / ④完成形。④は倍音の縞と F0 の起伏が両立。</figcaption>
+</figure>
+<div class="audio-grid">
+  <div class="lbl">super_final <span class="sub">0.19M</span></div><audio controls preload="none" src="./final_audio/super_final.wav"></audio>
+  <div class="lbl">tiny_final <span class="sub">0.26M</span></div><audio controls preload="none" src="./final_audio/tiny_final.wav"></audio>
+  <div class="lbl">small_final <span class="sub">0.51M</span></div><audio controls preload="none" src="./final_audio/small_final.wav"></audio>
+  <div class="lbl">mid_final <span class="sub">1.46M</span></div><audio controls preload="none" src="./final_audio/mid_final.wav"></audio>
+</div>
+
 <h2>計測方法</h2>
 <ul>
 <li><b>品質(mel-L1)</b>: GT duration を与えて mel を再構成し、マスク済み L1 を全80-mel・全5000発話で平均(frame-weighted)。学習損失と同一計算を eval モードで実施。</li>

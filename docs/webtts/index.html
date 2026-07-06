@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ブラウザ内 TTS デモ — minispeech</title>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+<style>
+:root { color-scheme: light dark; }
+body { font-family: system-ui, sans-serif; margin: 0 auto; padding: 28px 18px; max-width: 44rem; line-height: 1.7; }
+h1 { font-size: 1.3rem; margin: 0 0 6px; }
+p.desc { color: #888; font-size: 0.92rem; margin: 0 0 18px; }
+select, button { font-size: 1rem; padding: 8px 14px; border-radius: 8px; border: 1px solid #999; }
+select { width: 100%; margin: 6px 0 10px; }
+button { cursor: pointer; background: #0a84ff; color: #fff; border: none; }
+button:disabled { background: #999; cursor: wait; }
+#status { margin: 12px 0; font-size: 0.9rem; color: #888; min-height: 1.2em; }
+canvas { width: 100%; height: 110px; border: 1px solid #8884; border-radius: 8px; margin-top: 8px; }
+.meta { font-size: 0.85rem; color: #888; margin-top: 14px; }
+a { color: #0a84ff; }
+</style>
+</head>
+<body>
+<h1>ブラウザ内 日本語TTS (ONNX Runtime Web)</h1>
+<p class="desc">
+encoder (tiny 完成形 0.26M, 1.1MB) + vocoder (Vocos d128, 3.2MB) が
+<b>すべてこのページ内 (WASM)</b> で動きます。サーバーへの送信はありません。
+</p>
+<select id="sent"></select>
+<button id="go" disabled>読み込み中…</button>
+<div id="status"></div>
+<canvas id="wave" width="900" height="110"></canvas>
+<div class="meta">
+モデル: variance+PostNet+GAN (encoder) / vocos_lite_c ft (vocoder)。
+日本語 g2p はブラウザに載らないため、プリセット文の音素IDを事前計算して同梱。
+<a href="../efficient.html">← 評価ページ</a> ｜
+<a href="https://github.com/nnn112358/minispeech">ソース</a>
+</div>
+<script>
+let enc, voc, presets, audioCtx;
+const $ = id => document.getElementById(id);
+async function init() {
+  try {
+    ort.env.wasm.numThreads = 1;
+    $("status").textContent = "モデル読み込み中… (計 4.3MB)";
+    [enc, voc, presets] = await Promise.all([
+      ort.InferenceSession.create("encoder_slim.onnx", {executionProviders:["wasm"]}),
+      ort.InferenceSession.create("vocoder_slim.onnx", {executionProviders:["wasm"]}),
+      fetch("presets.json").then(r=>r.json()),
+    ]);
+    for (const [i,p] of presets.entries()) {
+      const o = document.createElement("option");
+      o.value = i; o.textContent = p.text;
+      $("sent").appendChild(o);
+    }
+    $("go").disabled = false; $("go").textContent = "合成して再生 ▶";
+    $("status").textContent = "準備完了";
+  } catch (e) { $("status").textContent = "初期化エラー: " + e; }
+}
+async function synth() {
+  try {
+    $("go").disabled = true;
+    const ids = presets[$("sent").value].ids;
+    const t0 = performance.now();
+    const ph = new ort.Tensor("int64", BigInt64Array.from(ids.map(BigInt)), [1, ids.length]);
+    const mel = (await enc.run({phoneme_ids: ph})).mel;
+    const t1 = performance.now();
+    const audio = (await voc.run({mel})).audio;
+    const t2 = performance.now();
+    const pcm = Float32Array.from(audio.data);
+    const dur = pcm.length / 22050;
+    $("status").textContent =
+      `encoder ${(t1-t0).toFixed(0)}ms + vocoder ${(t2-t1).toFixed(0)}ms = ${(t2-t0).toFixed(0)}ms `
+      + `(音声 ${dur.toFixed(2)}s, RTF ${((t2-t0)/1000/dur).toFixed(2)})`;
+    drawWave(pcm);
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)({sampleRate:22050});
+    const buf = audioCtx.createBuffer(1, pcm.length, 22050);
+    buf.copyToChannel(pcm, 0);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf; src.connect(audioCtx.destination); src.start();
+    src.onended = () => { $("go").disabled = false; };
+  } catch (e) { $("status").textContent = "エラー: " + e; $("go").disabled = false; }
+}
+function drawWave(pcm) {
+  const c = $("wave"), g = c.getContext("2d");
+  g.clearRect(0,0,c.width,c.height);
+  g.strokeStyle = "#0a84ff"; g.beginPath();
+  const step = Math.max(1, Math.floor(pcm.length / c.width));
+  for (let x=0; x<c.width; x++) {
+    let mn=1, mx=-1;
+    for (let i=x*step; i<Math.min((x+1)*step, pcm.length); i++) { mn=Math.min(mn,pcm[i]); mx=Math.max(mx,pcm[i]); }
+    g.moveTo(x, (1-mx)*c.height/2); g.lineTo(x, (1-mn)*c.height/2);
+  }
+  g.stroke();
+}
+$("go").onclick = synth;
+init();
+</script>
+</body>
+</html>

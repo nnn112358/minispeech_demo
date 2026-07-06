@@ -262,6 +262,27 @@ v+PN モデルに mel-GAN 微調整を直列した<b>完成形レシピ</b>。�
   <div class="lbl">mid_final <span class="sub">1.46M</span></div><audio controls preload="none" src="./final_audio/mid_final.wav"></audio>
 </div>
 
+<h3>GAN で音質担保できる下限 — 逆U字の発見</h3>
+<p class="desc">
+conv ラダーを 0.026M まで延長し UTMOS で判定。GAN の持ち上げは<b>逆U字</b>で、
+<b>d48〜d64 (0.09〜0.16M) がスイートスポット</b> (+0.5超)。d48+GAN は 1.7×大きい d64素を有意に超える。
+<b>0.05M 以下は構造が崩壊し GAN でも救えない</b>。各動画: 前半=GANなし → 後半=GANあり。
+</p>
+<figure class="plot">
+  <img src="./gan_floor_search.png" alt="gan floor search">
+  <figcaption>左: conv ラダー全域の UTMOS。右: GAN の持ち上げ幅は d48〜d64 をピークとする逆U字。</figcaption>
+</figure>
+<div class="wrap">
+<table class="matrix">
+<thead><tr><th>d48 (0.094M) — 実用フロア</th><th>d32 (0.044M) — 崖の途中</th><th>d24 (0.026M) — 構造崩壊</th></tr></thead>
+<tbody><tr>
+<td><a class="cell" href="./floor/d48_greet_ab.mp4"><img src="./floor/d48_greet_ab.png" alt="d48 A/B"></a></td>
+<td><a class="cell" href="./floor/d32_greet_ab.mp4"><img src="./floor/d32_greet_ab.png" alt="d32 A/B"></a></td>
+<td><a class="cell" href="./floor/d24_greet_ab.mp4"><img src="./floor/d24_greet_ab.png" alt="d24 A/B"></a></td>
+</tr></tbody>
+</table>
+</div>
+
 <h2>計測方法</h2>
 <ul>
 <li><b>品質(mel-L1)</b>: GT duration を与えて mel を再構成し、マスク済み L1 を全80-mel・全5000発話で平均(frame-weighted)。学習損失と同一計算を eval モードで実施。</li>

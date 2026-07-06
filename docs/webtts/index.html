@@ -29,24 +29,39 @@ a { color: #0a84ff; }
 <h1>ブラウザ内 日本語TTS (ONNX Runtime Web)</h1>
 <p class="desc">
 g2p (OpenJTalk系/WASM) → encoder → vocoder が<b>すべてこのページ内</b>で動きます。サーバー送信なし。
-モデルは選択時に読み込み (0.8〜5.9MB)。自由入力の g2p 辞書 (WASM) は初回のみ ~60MB (ブラウザにキャッシュされます)。
+encoder 7種 × vocoder 5種 を<b>自由に組み合わせ可能</b> (全モデルが同一 mel 契約を共有)。
+モデルは選択時に読み込み。自由入力の g2p 辞書 (WASM) は初回のみ ~60MB (ブラウザにキャッシュされます)。
 </p>
 
 <div class="row">
   <div>
     <label>音響モデル (encoder — すべて GAN 仕上げ済み完成形)</label>
     <select id="encSel">
-      <option value="enc_super">supertiny — 0.19M (0.8MB)</option>
-      <option value="enc_tiny" selected>tiny — 0.26M (1.1MB)</option>
-      <option value="enc_small">small — 0.51M (2.1MB) ★UTMOS最良</option>
-      <option value="enc_mid">middle — 1.46M (5.9MB)</option>
+      <optgroup label="EfficientEncoder (variance+PostNet+GAN)">
+        <option value="enc_super">supertiny — 0.19M (0.8MB)</option>
+        <option value="enc_tiny" selected>tiny — 0.26M (1.1MB)</option>
+        <option value="enc_small">small — 0.51M (2.1MB) ★UTMOS最良</option>
+        <option value="enc_mid">middle — 1.46M (5.9MB)</option>
+      </optgroup>
+      <optgroup label="MiniSpeechEncoder (conv, +GAN)">
+        <option value="enc_conv64">conv d64 — 0.16M (1.2MB)</option>
+        <option value="enc_conv96">conv d96 — 0.45M (2.6MB)</option>
+        <option value="enc_conv128">conv d128 — 0.79M (4.2MB)</option>
+      </optgroup>
     </select>
   </div>
   <div>
-    <label>ボコーダ (Vocos)</label>
+    <label>ボコーダ (mel→音声 — 同一 mel 契約で相互互換)</label>
     <select id="vocSel">
-      <option value="voc_d64">d64 — 0.15M (1.7MB)</option>
-      <option value="voc_d128" selected>d128 — 0.54M (3.2MB)</option>
+      <optgroup label="Vocos (ConvNeXt + iSTFT)">
+        <option value="voc_d64">vocos d64 — 0.15M (1.7MB)</option>
+        <option value="voc_d128" selected>vocos d128 — 0.54M (3.2MB)</option>
+        <option value="voc_d256">vocos d256 — 1.86M (8.5MB)</option>
+      </optgroup>
+      <optgroup label="別アーキテクチャ (比較用)">
+        <option value="voc_hifigan">HiFi-GAN — 1.46M (5.9MB)</option>
+        <option value="voc_mbistft">MB-iSTFT — 1.45M (5.8MB)</option>
+      </optgroup>
     </select>
   </div>
 </div>
